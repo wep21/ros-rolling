@@ -71,12 +71,12 @@ index f7f4762..42ec579 100644
 +  ${CAIRO_INCLUDE_DIRS}
 +  ${pcl_conversions_INCLUDE_DIRS}
 +)
-+if ("$ENV{ROS_DISTRO}" STRLESS "kilted")
-+  # In Kilted, pcl_conversions was converted over to an INTERFACE target,
++if ("$ENV{ROS_DISTRO}" STRLESS "rolling")
++  # In Rolling, pcl_conversions was converted over to an INTERFACE target,
 +  # but prior to it it is only available as the INCLUDE_DIRS.  So we have this
 +  # compatibility hack to deal with that difference.
 +  target_include_directories(${PROJECT_NAME} PRIVATE ${pcl_conversions_INCLUDE_DIRS})
-+  # In Kilted, urdf/model.h was deprecated in favor of urdf/model.hpp.
++  # In Rolling, urdf/model.h was deprecated in favor of urdf/model.hpp.
 +  # Deal with the difference here so we have no warnings.
 +  target_compile_definitions(${PROJECT_NAME} PRIVATE "-DUSE_URDF_H_FILES")
 +else()
@@ -239,7 +239,7 @@ index f7f4762..42ec579 100644
 +  "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
 +  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 +)
-+if ("$ENV{ROS_DISTRO}" STRLESS "kilted")
++if ("$ENV{ROS_DISTRO}" STRLESS "rolling")
 +  target_compile_definitions(cartographer_rosbag_validate PRIVATE "-DUSE_URDF_H_FILES")
 +endif()
 +target_link_libraries(cartographer_rosbag_validate
