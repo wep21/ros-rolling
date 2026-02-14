@@ -1,5 +1,12 @@
+ament_cmake_vendor_package:
+  add_build: ["vcs2l"]
+  add_host: ["vcs2l"]
+  add_run: ["vcs2l"]
+  remove_build: ["vcstool"]
+  remove_host: ["vcstool"]
+  remove_run: ["vcstool"]
 ament_package:
-  add_host: ['importlib_resources']
+  add_host: ["importlib_resources"]
 foxglove_bridge:
   add_host: ["ros-rolling-ament-cmake"]
 ros_ign_interfaces:
@@ -170,7 +177,10 @@ uncrustify_vendor:
   add_host: ["uncrustify"]
   add_run: ["uncrustify"]
 mimick_vendor:
-  add_build: ["vcs2l"]
+  add_host: ["vcs2l"]
+  add_run: ["vcs2l"]
+  remove_host: ["vcstool"]
+  remove_run: ["vcstool"]
 gz_cmake_vendor:
   # https://github.com/gazebo-release/gz_cmake_vendor/blob/rolling/CMakeLists.txt#L6 for select the right major version
   # (this is true for all gz-* vendor packages) or https://github.com/gazebo-tooling/gazebodistro/blob/master/collection-harmonic.yaml

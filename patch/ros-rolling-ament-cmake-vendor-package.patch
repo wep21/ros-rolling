@@ -124,17 +124,3 @@ index 0b1a86c12..2ca2f40a2 100644
 -    message(STATUS "Skipping vendor package build for '${TARGET_NAME}', which is already satisfied")
    endif()
  endmacro()
- 
-diff --git a/package.xml b/package.xml
-index 1768ef074..79b4dbfce 100644
---- a/package.xml
-+++ b/package.xml
-@@ -17,7 +17,7 @@
-   <buildtool_export_depend>ament_cmake_export_dependencies</buildtool_export_depend>
-   <buildtool_export_depend>ament_cmake_core</buildtool_export_depend>
-   <buildtool_export_depend>git</buildtool_export_depend>
--  <buildtool_export_depend>python3-vcstool</buildtool_export_depend>
-+  <buildtool_export_depend>python3-vcs2l</buildtool_export_depend>
- 
-   <test_depend>ament_cmake_test</test_depend>
- 
