@@ -1,18 +1,7 @@
-From 1132cb348f7267c51627ec596182bbcaa4d57c07 Mon Sep 17 00:00:00 2001
-From: Silvio <silvio.traversaro@iit.it>
-Date: Thu, 3 Jul 2025 10:14:56 +0200
-Subject: [PATCH] ament_vendor: Add IS_VENDORED_OUTPUT_VARIABLE_NAME argument
- and AMENT_VENDOR_POLICY CMake option
-
-Signed-off-by: Silvio <silvio.traversaro@iit.it>
----
- .../cmake/ament_vendor.cmake                  | 93 ++++++++++++++++++-
- 1 file changed, 88 insertions(+), 5 deletions(-)
-
-diff --git a/ament_cmake_vendor_package/cmake/ament_vendor.cmake b/ament_cmake_vendor_package/cmake/ament_vendor.cmake
-index c9b963cd..2ca2f40a 100644
---- a/ament_cmake_vendor_package/cmake/ament_vendor.cmake
-+++ b/ament_cmake_vendor_package/cmake/ament_vendor.cmake
+diff --git a/cmake/ament_vendor.cmake b/cmake/ament_vendor.cmake
+index 0b1a86c12..2ca2f40a2 100644
+--- a/cmake/ament_vendor.cmake
++++ b/cmake/ament_vendor.cmake
 @@ -48,6 +48,31 @@
  #   project, expose the external project globally to any downstream CMake
  #   projects.
@@ -48,7 +37,7 @@ index c9b963cd..2ca2f40a 100644
 @@ -60,7 +85,7 @@ macro(ament_vendor TARGET_NAME)
      message(FATAL_ERROR "ament_vendor() must be called before ament_package()")
    endif()
-
+ 
 -  cmake_parse_arguments(_ARG "GLOBAL_HOOK;SKIP_INSTALL" "SOURCE_SUBDIR;VCS_TYPE;VCS_URL;VCS_VERSION;SATISFIED" "CMAKE_ARGS;PATCHES" ${ARGN})
 +  cmake_parse_arguments(_ARG "GLOBAL_HOOK;SKIP_INSTALL" "SOURCE_SUBDIR;VCS_TYPE;VCS_URL;VCS_VERSION;SATISFIED;IS_VENDORED_OUTPUT_VARIABLE_NAME" "CMAKE_ARGS;PATCHES" ${ARGN})
    if(_ARG_UNPARSED_ARGUMENTS)
@@ -57,7 +46,7 @@ index c9b963cd..2ca2f40a 100644
 @@ -93,15 +118,57 @@ macro(ament_vendor TARGET_NAME)
      set(_ARG_SATISFIED FALSE)
    endif()
-
+ 
 +  # If defined, let's set ${_ARG_IS_VENDORED_OUTPUT_VARIABLE_NAME} to FALSE, it will be set
 +  # to TRUE if the package is actually vendored
 +  if(DEFINED _ARG_IS_VENDORED_OUTPUT_VARIABLE_NAME)
@@ -75,20 +64,21 @@ index c9b963cd..2ca2f40a 100644
 +  set(AMENT_VENDOR_POLICY "DEFAULT" CACHE STRING ${_AMENT_VENDOR_POLICY_DOCS})
 +  set_property(CACHE AMENT_VENDOR_POLICY PROPERTY STRINGS "DEFAULT" "FORCE_BUILD_VENDOR" "NEVER_VENDOR" "NEVER_VENDOR_IGNORE_SATISFIED_CHECK")
 +  mark_as_advanced(AMENT_VENDOR_POLICY)
- 
--  if(NOT _ARG_SATISFIED OR FORCE_BUILD_VENDOR_PKG)
++
 +  if(FORCE_BUILD_VENDOR_PKG AND NOT AMENT_VENDOR_POLICY STREQUAL "FORCE_BUILD_VENDOR")
 +    message(DEPRECATION "FORCE_BUILD_VENDOR_PKG set to ON detected, FORCE_BUILD_VENDOR_PKG variable is deprecated, please set AMENT_VENDOR_POLICY to FORCE_BUILD_VENDOR instead.")
 +    set(CMAKE_BUILD_TYPE "FORCE_BUILD_VENDOR" CACHE STRING ${_AMENT_VENDOR_POLICY_DOCS} FORCE)
 +  endif()
 +
 +  # AMENT_VENDOR_POLICY
-+
+ 
+-  if(NOT _ARG_SATISFIED OR FORCE_BUILD_VENDOR_PKG)
 +  if(AMENT_VENDOR_POLICY STREQUAL "FORCE_BUILD_VENDOR")
 +    set(_call_ament_vendor TRUE)
-+    if(_ARG_SATISFIED)
+     if(_ARG_SATISFIED)
+-      message(STATUS "Forcing vendor package build for '${TARGET_NAME}', which is already satisfied")
 +      message(STATUS "Forcing vendor package build for '${TARGET_NAME}', which is already satisfied as AMENT_VENDOR_POLICY is set to FORCE_BUILD_VENDOR")
-+    endif()
+     endif()
 +  elseif(AMENT_VENDOR_POLICY STREQUAL "NEVER_VENDOR")
 +    if(NOT _ARG_SATISFIED)
 +      message(FATAL_ERROR "Error as SATISFIED argument is not TRUE, but AMENT_VENDOR_POLICY is set to NEVER_VENDOR")
@@ -101,23 +91,22 @@ index c9b963cd..2ca2f40a 100644
 +    set(_call_ament_vendor FALSE)
 +  else()
 +    # This is the default case
-     if(_ARG_SATISFIED)
--      message(STATUS "Forcing vendor package build for '${TARGET_NAME}', which is already satisfied")
++    if(_ARG_SATISFIED)
 +      message(STATUS "Skipping vendor package build for '${TARGET_NAME}', as SATISFIED is TRUE and AMENT_VENDOR_POLICY is set to DEFAULT")
 +      set(_call_ament_vendor FALSE)
 +    else()
 +      set(_call_ament_vendor TRUE)
-     endif()
++    endif()
 +  endif()
-
+ 
 +  if(_call_ament_vendor)
      list_append_unique(_AMENT_CMAKE_VENDOR_PACKAGE_PREFIX_PATH "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}-prefix/install")
-
+ 
      _ament_vendor(
 @@ -115,6 +182,12 @@ macro(ament_vendor TARGET_NAME)
        "${_ARG_SKIP_INSTALL}"
      )
-
+ 
 +    if(DEFINED _ARG_IS_VENDORED_OUTPUT_VARIABLE_NAME)
 +      # There is no PARENT_SCOPE as this is a cmake macro,
 +      # if it is converted to a function PARENT_SCOPE will need to be added
@@ -128,7 +117,7 @@ index c9b963cd..2ca2f40a 100644
        # Hooks for CMAKE_PREFIX_PATH
        if(_ARG_GLOBAL_HOOK)
 @@ -142,8 +215,6 @@ macro(ament_vendor TARGET_NAME)
-
+ 
        set(_ament_vendor_called TRUE)
      endif()
 -  else()
@@ -136,29 +125,16 @@ index c9b963cd..2ca2f40a 100644
    endif()
  endmacro()
  
-@@ -241,6 +312,10 @@ function(_ament_vendor TARGET_NAME VCS_TYPE VCS_URL VCS_VERSION PATCHES CMAKE_AR
-     set(CMAKE_ARGS_CONTENT "${CMAKE_ARGS_CONTENT}\nset(CMAKE_BUILD_TYPE [=[${CMAKE_BUILD_TYPE}]=] CACHE INTERNAL \"\")")
-   endif()
-
-+  if(DEFINED CMAKE_IGNORE_PREFIX_PATH)
-+    set(CMAKE_ARGS_CONTENT "${CMAKE_ARGS_CONTENT}\nset(CMAKE_IGNORE_PREFIX_PATH [=[${CMAKE_IGNORE_PREFIX_PATH}]=] CACHE INTERNAL \"\")")
-+  endif()
-+
-   if(DEFINED CMAKE_MODULE_PATH)
-     set(CMAKE_ARGS_CONTENT "${CMAKE_ARGS_CONTENT}\nset(CMAKE_MODULE_PATH [=[${CMAKE_MODULE_PATH}]=] CACHE INTERNAL \"\")")
-   endif()
-@@ -256,6 +331,14 @@ function(_ament_vendor TARGET_NAME VCS_TYPE VCS_URL VCS_VERSION PATCHES CMAKE_AR
-     set(CMAKE_ARGS_CONTENT "${CMAKE_ARGS_CONTENT}\nset(BUILD_SHARED_LIBS ON CACHE BOOL \"\")")
-   endif()
+diff --git a/package.xml b/package.xml
+index 1768ef074..79b4dbfce 100644
+--- a/package.xml
++++ b/package.xml
+@@ -17,7 +17,7 @@
+   <buildtool_export_depend>ament_cmake_export_dependencies</buildtool_export_depend>
+   <buildtool_export_depend>ament_cmake_core</buildtool_export_depend>
+   <buildtool_export_depend>git</buildtool_export_depend>
+-  <buildtool_export_depend>python3-vcstool</buildtool_export_depend>
++  <buildtool_export_depend>python3-vcs2l</buildtool_export_depend>
  
-+  if(DEFINED Python_EXECUTABLE)
-+    set(CMAKE_ARGS_CONTENT "${CMAKE_ARGS_CONTENT}\nset(Python_EXECUTABLE [=[${Python_EXECUTABLE}]=] CACHE INTERNAL \"\")")
-+  endif()
-+
-+  if(DEFINED Python3_EXECUTABLE)
-+    set(CMAKE_ARGS_CONTENT "${CMAKE_ARGS_CONTENT}\nset(CMAKE_IGNORE_PREFIX_PATH [=[${Python3_EXECUTABLE}]=] CACHE INTERNAL \"\")")
-+  endif()
-+
-   file(GENERATE OUTPUT "${CMAKE_ARGS_FILE}" CONTENT "${CMAKE_ARGS_CONTENT}")
-   list(PREPEND CMAKE_ARGS "-C${CMAKE_ARGS_FILE}")
+   <test_depend>ament_cmake_test</test_depend>
  

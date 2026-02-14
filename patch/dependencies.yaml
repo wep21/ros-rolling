@@ -36,7 +36,6 @@ intra_process_demo:
   add_run: ["${{ 'libopencv * *qt6*' if not (ppc64le or aarch64 or osx) }}"]
 rviz_ogre_vendor:
   add_host: ["zlib", "freeimage", "freetype", "assimp", "zziplib", "pugixml", "${{ 'libglu' if linux }}"]
-  add_build: ["vcstool"]
   add_run: ["assimp"]
 pcl_conversions:
   add_host: ["${{ 'libgl-devel' if linux }}", "${{ 'libopengl-devel' if linux }}", "libboost-devel"]
@@ -171,7 +170,7 @@ uncrustify_vendor:
   add_host: ["uncrustify"]
   add_run: ["uncrustify"]
 mimick_vendor:
-  add_build: ["vcstool"]
+  add_build: ["vcs2l"]
 gz_cmake_vendor:
   # https://github.com/gazebo-release/gz_cmake_vendor/blob/rolling/CMakeLists.txt#L6 for select the right major version
   # (this is true for all gz-* vendor packages) or https://github.com/gazebo-tooling/gazebodistro/blob/master/collection-harmonic.yaml
