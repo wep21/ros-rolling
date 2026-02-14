@@ -112,7 +112,7 @@ jobs:
       shell: bash -l {0}
       if: matrix.platform != 'emscripten-wasm32'
       run: |
-        pixi run rattler-build build --recipe-dir recipes --target-platform ${{ matrix.platform }} -m ./conda_build_config.yaml -c robostack-kilted -c conda-forge --skip-existing
+        pixi run rattler-build build --recipe-dir recipes --target-platform ${{ matrix.platform }} -m ./conda_build_config.yaml -c wep21 -c conda-forge --skip-existing
 
     - name: See packages that will be saved in cache
       shell: bash -l {0}
